@@ -19,6 +19,7 @@ msg3: .asciiz "Ganhou"
 msg4: .asciiz "Letras tentandas: "
 msg5: .asciiz "tente uma letra: "
 msg6: .asciiz "Quer jogar novamente?\n1 para sim\nqualquer outro caracter para não"
+msg7: .asciiz " já foi escolhida"
 palavra: .asciiz  "louco    "
 		 "comida   "
 		 "gente    "
@@ -94,6 +95,12 @@ for_renicia_letras:
 	j for_renicia_letras
 volta_renicia_letras:
 	jr $ra
+
+	#la $s0, erros
+	#lb $t0, 0($s0) #isso captura algo da memoria e poe no registrador
+
+	#la $s0, rodadas
+	#sb $t0, 0($s0) #carrega um dado no registrador para a memória
 	
 conta_letras: #t1= contador t3= carrega a letra $t2= numero de letras
 	move $a0, $s2
@@ -124,7 +131,8 @@ sorteia_palavra:
     	li $v0, GERA_NUMERO_ALEATORIO  #gera o numero aleatorio
     	syscall
     	
-    	
+    	#li $v0, 1   # 1 is the system call code to show an int number
+	#syscall     # as I said your generated number is at $a0, so it will be printed
     	
 	add $t1, $zero, $a0 #passa o numero aleatorio para t1
 	addi $t2, $zero, 10 #carrega o numero de letras 
@@ -134,7 +142,7 @@ sorteia_palavra:
 	
 	#li $v0 PRINTA #imprime palavra escolhida
     	#la $a0, palavra($t2)
-    	#syscall para teste
+    	#syscall
     	move $v0, $t2 #passa para o retorno
     	jr $ra
     	
@@ -218,11 +226,11 @@ volta_imprime_boneco:
 
 imprime_palavra:
     	
-    	li $v0 PRINTA #imprime quebra
+    	li $v0 4 #imprime quebra
     	la $a0 quebralinha
     	syscall
     	
-    	li $v0 PRINTA #imprime palavra invisivel
+    	li $v0 4 #imprime palavra invisivel
     	la $a0 palavra_invisivel
     	syscall
     	
@@ -230,25 +238,47 @@ imprime_palavra:
 
 imprime_letras_ja_tentadas:
 
-	li $v0 PRINTA #imprime quebra
+	li $v0 4 #imprime quebra
     	la $a0 quebralinha
     	syscall
     	
-	li $v0 PRINTA #imprime palavra letras ja tentadas
+	li $v0 4 #imprime palavra letras ja tentadas
     	la $a0 msg4
     	syscall
     	
-    	li $v0 PRINTA #imprime palavra invisivel
+    	li $v0 4 #imprime palavra invisivel
     	la $a0 letras_chutadas
     	syscall
     	
     	jr $ra
 
+testa_chute: #a0 contem o chute, t1 contador, t2 conta se houve uma letra igual ja tentada, $t3 carrega a letra das palavras ja tentadas
+	move $a0, $t0
+	addi $t1, $zero, 0 #contador
+	addi $t2, $zero, 0 #contador de igual
+for_testa_chute:
+	beq $t1, $s4, volta_testa_chute
+	lb $t3, letras_chutadas($t1)
+	addi $t1, $t1, 1
+	beq $t3, $t0, passou_testa_chute
+	j for_testa_chute
+passou_testa_chute:
+	addi $t2, $t2, 1 #incrementa se for igual
+	
+	li $v0 PRINTA #imprime outro braco
+    	la $a0 msg7
+    	syscall
+    	
+	j for_testa_chute
+volta_testa_chute:
+	move $v0, $t2
+	jr $ra
+
 chute: # t0= letra chutada t1=contador a0= posicao da palavra escolhida que vai ser incremetado 
 	#t3= carrega a letra, $v0= retorna acerto, $v1= retorna erro, t4 conta acertos, t5= conta erro
    	sub $sp, $sp, 4
    	sw $ra, 0($sp) #coloca na posicao a info do $ra
-   	
+chute_teste:
    	li $v0 PRINTA
     	la $a0 quebralinha
     	syscall
@@ -263,6 +293,8 @@ chute: # t0= letra chutada t1=contador a0= posicao da palavra escolhida que vai 
     	syscall
     	
     	lb $t0, chutado
+	jal testa_chute
+	bge $v0, 1, chute_teste
     	move $a0, $s2
     	addi $t1, $zero, 0 #contador do for
     	addi $t4, $zero , 0 #zera os acertos
