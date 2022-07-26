@@ -8,4 +8,4 @@ O jogo é bem intuitivo, você chuta uma letra até que acerte totalmente a pala
 
 Bom Jogo!!
 
-Made By Leonardo da Veiga & Eduardo Gehrke
+Made By Leonardo Silva da Veiga Marinho Barbosa & Eduardo Rafael Gehrke
